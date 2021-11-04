@@ -1,4 +1,7 @@
-# do all of this in a conda environment called xmase
+########################################
+Manual Installation (this is how I did it on a Ubuntu 20.04 machine, this hasn't been tested on Mac or Windows)
+########################################
+# create and activate a conda environment called xmase
 
 # install cuda v. 11.3 (see nvidia website for details)
 
@@ -6,9 +9,9 @@
 conda install -c conda-forge gym
 conda install -c conda-forge matplotlib
 
-# run in the base directory of ece598-xmase
+# set up the minigrid environment
+## NOTE: run in the base directory of ece598-xmase
 pip install -e .
-
 
 # install pytorch 1.10 (this may cause package conflicts with those installed with the pip install -e . command, but conda should resolve these errors)
 conda install pytorch torchvision torchaudio cudatoolkit=11.3 -c pytorch
@@ -16,3 +19,12 @@ conda install pytorch torchvision torchaudio cudatoolkit=11.3 -c pytorch
 # install rllib
 conda install -c conda-forge ray-rllib
 
+########################################
+Automated Installation
+########################################
+# automatically install all the packages using conda
+conda env create -f environment.yml
+
+# set up the minigrid environment
+## NOTE: run in the base directory of ece598-xmase
+pip install -e .
