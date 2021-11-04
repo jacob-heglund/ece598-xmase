@@ -1,0 +1,18 @@
+# do all of this in a conda environment called xmase
+
+# install cuda v. 11.3 (see nvidia website for details)
+
+# install gym-multigrid
+conda install -c conda-forge gym
+conda install -c conda-forge matplotlib
+
+# run in the base directory of ece598-xmase
+pip install -e .
+
+
+# install pytorch 1.10 (this may cause package conflicts with those installed with the pip install -e . command, but conda should resolve these errors)
+conda install pytorch torchvision torchaudio cudatoolkit=11.3 -c pytorch
+
+# install rllib
+conda install -c conda-forge ray-rllib
+
