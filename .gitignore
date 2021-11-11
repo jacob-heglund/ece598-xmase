@@ -1,5 +1,6 @@
-PPO_logs
-PPO_preTrained
+logs/
+storage/
+.vscode/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
