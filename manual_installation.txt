@@ -1,3 +1,4 @@
+#TODO none of this is currently up to date
 ########################################
 Manual Installation (this is how I did it on a Ubuntu 20.04 machine, this hasn't been tested on Mac or Windows)
 ########################################
@@ -16,8 +17,8 @@ pip install -e .
 # install pytorch 1.10 (this may cause package conflicts with those installed with the pip install -e . command, but conda should resolve these errors)
 conda install pytorch torchvision torchaudio cudatoolkit=11.3 -c pytorch
 
-# install rllib
-conda install -c conda-forge ray-rllib
+# install jupyter
+conda install -c conda-forge jupyterlab
 
 ########################################
 Automated Installation

@@ -33,7 +33,6 @@ class CollectGameEnv(MultiGridEnv):
                 agents.append(Agent(self.world, i, view_size=view_size))
         else:
             agents = []
-            #for i in agents_index:
             agents.append(Watcher(self.world, 1))
             agents.append(Collector(self.world, 2))
 
@@ -104,6 +103,7 @@ class CollectGame4HEnv10x10N2(CollectGameEnv):
         balls_reward=[1],
         zero_sum=True)
 
+
 class CollectGameWatcher(CollectGameEnv):
     def __init__(self):
         super().__init__(size=10,
@@ -116,3 +116,13 @@ class CollectGameWatcher(CollectGameEnv):
         self.action_set_watcher=SmallActions
         self.action_space_watcher = spaces.Discrete(len(self.action_set_watcher.available))
 
+#TODO set the action space of all agents to be SmallActions somehow
+class CollectGameSingleAgent(CollectGameEnv):
+    def __init__(self):
+        super().__init__(size=10,
+        num_balls=[1],
+        agents_index = [2],
+        actions_set=SmallActions,
+        balls_index=[0],
+        balls_reward=[1],
+        zero_sum=True)

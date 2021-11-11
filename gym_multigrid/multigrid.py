@@ -193,7 +193,7 @@ class Goal(WorldObj):
     def render(self, img):
         fill_coords(img, point_in_rect(0, 1, 0, 1), COLORS[self.color])
 
- 
+
 class Flag(WorldObj):
     def __init__(self, world, index, reward=1):
         super().__init__(world, 'flag', world.IDX_TO_COLOR[index])
@@ -206,7 +206,7 @@ class Flag(WorldObj):
     def render(self, img):
         fill_coords(img, point_in_rect(0, 1, 0, 1), COLORS[self.color])
 
-        
+
 class Switch(WorldObj):
     def __init__(self, world):
         super().__init__(world, 'switch', world.IDX_TO_COLOR[0])
@@ -241,7 +241,7 @@ class Floor(WorldObj):
             (1, 1)
         ])
 
-        
+
 class Floor_Colored(WorldObj):
     """
     Colored floor tile for each team
@@ -265,8 +265,8 @@ class Floor_Colored(WorldObj):
             (TILE_PIXELS, 1),
             (1, 1)
         ])
-        
-        
+
+
 class Lava(WorldObj):
     def __init__(self, world):
         super().__init__(world, 'lava', 'red')
@@ -1106,13 +1106,13 @@ class MultiGridEnv(gym.Env):
 
     def _handle_switch(self, i, rewards, fwd_pos, fwd_cell):
         pass
-    
-    def _reward(self, current_agent, rewards, reward=1):
+
+    def _reward(self, reward=1):
         """
         Compute the reward to be given upon success
         """
 
-        return 1 - 0.9 * (self.step_count / self.max_steps)
+        return reward - 0.9 * (self.step_count / self.max_steps)
 
     def _rand_int(self, low, high):
         """
@@ -1289,7 +1289,7 @@ class MultiGridEnv(gym.Env):
 
         order = np.random.permutation(len(actions))
 
-        rewards = np.zeros(len(actions))
+        reward = 0
         done = False
 
         for i in order:
@@ -1318,33 +1318,33 @@ class MultiGridEnv(gym.Env):
                 if fwd_cell is not None:
                     if fwd_cell.type == 'goal':
                         done = True
-                        self._reward(i, rewards, 1)
-                    elif fwd_cell.type == 'switch':
-                        self._handle_switch(i, rewards, fwd_pos, fwd_cell)
+                        reward = self._reward()
+                    # elif fwd_cell.type == 'switch':
+                    #     self._handle_switch(i, rewards, fwd_pos, fwd_cell)
                 elif fwd_cell is None or fwd_cell.can_overlap():
                     self.grid.set(*fwd_pos, self.agents[i])
                     self.grid.set(*self.agents[i].pos, None)
                     self.agents[i].pos = fwd_pos
-                self._handle_special_moves(i, rewards, fwd_pos, fwd_cell)
+                # self._handle_special_moves(i, rewards, fwd_pos, fwd_cell)
 
             elif 'build' in self.actions.available and actions[i]==self.actions.build:
                 self._handle_build(i, rewards, fwd_pos, fwd_cell)
 
-            # Pick up an object
-            elif actions[i] == self.actions.pickup:
-                self._handle_pickup(i, rewards, fwd_pos, fwd_cell)
+            # # Pick up an object
+            # elif actions[i] == self.actions.pickup:
+            #     self._handle_pickup(i, rewards, fwd_pos, fwd_cell)
 
-            # Drop an object
-            elif actions[i] == self.actions.drop:
-                self._handle_drop(i, rewards, fwd_pos, fwd_cell)
+            # # Drop an object
+            # elif actions[i] == self.actions.drop:
+            #     self._handle_drop(i, rewards, fwd_pos, fwd_cell)
 
-            # Toggle/activate an object
-            elif actions[i] == self.actions.toggle:
-                if fwd_cell:
-                    fwd_cell.toggle(self, fwd_pos)
-                   
-            # Fight enemy agent   
-            #elif actions[i] == self.actions.fight:
+            # # Toggle/activate an object
+            # elif actions[i] == self.actions.toggle:
+            #     if fwd_cell:
+            #         fwd_cell.toggle(self, fwd_pos)
+
+            # # Fight enemy agent
+            # elif actions[i] == self.actions.fight:
             #    self._handle_fight(i, rewards, fwd_pos, fwd_cell)
 
             # Done action (not used by default)
@@ -1352,6 +1352,8 @@ class MultiGridEnv(gym.Env):
                 pass
 
             else:
+                import pdb
+                pdb.set_trace()
                 assert False, "unknown action"
 
         if self.step_count >= self.max_steps:
@@ -1364,7 +1366,7 @@ class MultiGridEnv(gym.Env):
 
         obs=[self.objects.normalize_obs*ob for ob in obs]
 
-        return obs, rewards, done, {}
+        return obs, reward, done, {}
 
     def gen_obs_grid(self):
         """

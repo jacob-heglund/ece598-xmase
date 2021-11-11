@@ -16,7 +16,7 @@ def main():
             entry_point='gym_multigrid.envs:SoccerGame4HEnv10x15N2',
         )
         env = gym.make('multigrid-soccer-v0')
-    
+
     elif args.env == 'watcher':
         register(
             id='multigrid-watcher-v0',
