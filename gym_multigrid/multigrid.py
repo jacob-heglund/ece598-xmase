@@ -8,6 +8,8 @@ from .rendering import *
 from .window import Window
 import numpy as np
 
+import pdb
+
 # Size in pixels of a tile in the full-scale human view
 TILE_PIXELS = 32
 
@@ -927,13 +929,13 @@ class MultiGridEnv(gym.Env):
             grid_size=None,
             width=None,
             height=None,
-            max_steps=100,
+            max_steps=1000,
             see_through_walls=False,
             seed=2,
             agents=None,
             partial_obs=True,
             agent_view_size=7,
-            actions_set=Actions,
+            actions_set=SmallActions,
             objects_set = World
     ):
         self.agents = agents
@@ -1317,6 +1319,7 @@ class MultiGridEnv(gym.Env):
             elif actions[i] == self.actions.forward:
                 if fwd_cell is not None:
                     if fwd_cell.type == 'goal':
+                        pdb.set_trace()
                         done = True
                         reward = self._reward()
                     # elif fwd_cell.type == 'switch':
@@ -1352,8 +1355,6 @@ class MultiGridEnv(gym.Env):
                 pass
 
             else:
-                import pdb
-                pdb.set_trace()
                 assert False, "unknown action"
 
         if self.step_count >= self.max_steps:

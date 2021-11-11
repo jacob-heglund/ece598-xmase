@@ -9,13 +9,9 @@ from gym.envs.registration import register
 
 import torch
 import numpy as np
-
 import gym
 
-# import pybullet_envs
-
 from PPO import PPO
-
 import pdb
 
 ################################### Training ###################################
@@ -54,12 +50,12 @@ def train():
 
     has_continuous_action_space = False  # continuous action space; else discrete
 
-    max_ep_len = 100                    # max timesteps in one episode
+    max_ep_len = 1000                   # max timesteps in one episode
     max_training_timesteps = int(3e6)   # break training loop if timeteps > max_training_timesteps
 
     print_freq = max_ep_len * 10        # print avg reward in the interval (in num timesteps)
     log_freq = max_ep_len * 2           # log avg reward in the interval (in num timesteps)
-    save_model_freq = int(1e5)          # save model frequency (in num timesteps)
+    save_model_freq = int(10000)          # save model frequency (in num timesteps)
 
     action_std = 0.6                    # starting std for action distribution (Multivariate Normal)
     action_std_decay_rate = 0.05        # linearly decay action_std (action_std = action_std - action_std_decay_rate)
@@ -96,7 +92,6 @@ def train():
     if has_continuous_action_space:
         action_dim = env.action_space.shape[0]
     else:
-        pdb.set_trace()
         action_dim = env.action_space.n
 
 
@@ -244,7 +239,6 @@ def train():
         current_ep_reward = 0
 
         for t in range(1, max_ep_len+1):
-
             # select action with policy
             actions = []
             for i in range(n_agents):
@@ -272,8 +266,7 @@ def train():
             if time_step % log_freq == 0:
 
                 # log average reward till last episode
-                pdb.set_trace()
-                log_avg_reward = log_running_reward.item() / log_running_episodes
+                log_avg_reward = log_running_reward / log_running_episodes
                 log_avg_reward = round(log_avg_reward, 4)
 
                 log_f.write(f"{i_episode},{time_step},{log_avg_reward}\n")
@@ -286,7 +279,7 @@ def train():
             if time_step % print_freq == 0:
 
                 # print average reward till last episode
-                print_avg_reward = print_running_reward.item() / print_running_episodes
+                print_avg_reward = print_running_reward / print_running_episodes
                 print_avg_reward = round(print_avg_reward, 2)
 
                 print(f"Episode : {i_episode} \t\t Timestep : {time_step} \t\t Average Reward : {print_avg_reward}")
@@ -304,7 +297,7 @@ def train():
                 print("model saved")
                 print("Elapsed Time  : ", datetime.now().replace(microsecond=0) - start_time)
                 print("--------------------------------------------------------------------------------------------")
-
+            #TODO the episodes never actually end
             # break; if the episode is over
             if done:
                 break
@@ -330,13 +323,4 @@ def train():
     print("============================================================================================")
 
 if __name__ == "__main__":
-
     train()
-
-
-
-
-
-
-
-

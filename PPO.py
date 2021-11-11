@@ -112,7 +112,6 @@ class ActorCritic(nn.Module):
     #     tmp = self.conv3_actor(tmp)
     #     tmp = self.mlp_actor(self.flatten(tmp))
     #     tmp = self.softmax(tmp)
-    #     pdb.set_trace()
 
     #     return tmp
 
