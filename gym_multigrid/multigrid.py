@@ -1319,7 +1319,6 @@ class MultiGridEnv(gym.Env):
             elif actions[i] == self.actions.forward:
                 if fwd_cell is not None:
                     if fwd_cell.type == 'goal':
-                        pdb.set_trace()
                         done = True
                         reward = self._reward()
                     # elif fwd_cell.type == 'switch':

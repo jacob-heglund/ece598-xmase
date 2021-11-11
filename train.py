@@ -23,7 +23,7 @@ def train():
 
     ####### initialize environment hyperparameters ######
     parser = argparse.ArgumentParser()
-    parser.add_argument("--env", type=str, default="multigrid-single-agent-v0")
+    parser.add_argument("--env", type=str, default="multigrid-single-agent-v0", choices=["multigrid-single-agent-v0", "multigrid-watcher-v0"])
     args = parser.parse_args()
 
     if args.env == "multigrid-single-agent-v0":
@@ -63,11 +63,7 @@ def train():
     action_std_decay_freq = int(2.5e5)  # action_std decay frequency (in num timesteps)
 
     #####################################################
-
-
     ## Note : print/log frequencies should be > than max_ep_len
-
-
     ################ PPO hyperparameters ################
 
     update_timestep = max_ep_len * 4      # update policy every n timesteps
@@ -82,9 +78,6 @@ def train():
     random_seed = 0         # set random seed if required (0 = no random seed)
 
     #####################################################
-
-
-
     print("training environment name : " + args.env)
     env = gym.make(args.env)
 
@@ -94,10 +87,7 @@ def train():
     else:
         action_dim = env.action_space.n
 
-
-
     ###################### logging ######################
-
     #### log files for multiple runs are NOT overwritten
 
     log_dir = "logs"
@@ -108,12 +98,10 @@ def train():
     if not os.path.exists(log_dir):
           os.makedirs(log_dir)
 
-
     #### get number of log files in log directory
     run_num = 0
     current_num_files = next(os.walk(log_dir))[2]
     run_num = len(current_num_files)
-
 
     #### create new log file for each run
     log_f_name = log_dir + "/PPO_" + args.env + "_log_" + str(run_num) + ".txt"
@@ -122,8 +110,6 @@ def train():
     print("logging at : " + log_f_name)
 
     #####################################################
-
-
     ################### checkpointing ###################
 
     run_num_pretrained = 0      #### change this to prevent overwriting weights in same args.env folder
@@ -143,12 +129,8 @@ def train():
         checkpoint_paths.append(checkpoint_path)
         print("save checkpoint path : " + checkpoint_path)
 
-
     #####################################################
-
-
     ############# print all hyperparameters #############
-
     print("--------------------------------------------------------------------------------------------")
 
     print("max training timesteps : ", max_training_timesteps)
@@ -196,9 +178,7 @@ def train():
         np.random.seed(random_seed)
 
     #####################################################
-
     print("============================================================================================")
-
     ################# training procedure ################
 
     # initialize a PPO agent
@@ -212,25 +192,18 @@ def train():
     # track total training time
     start_time = datetime.now().replace(microsecond=0)
     print("Started training at (GMT) : ", start_time)
-
     print("============================================================================================")
-
-
     # logging file
     log_f = open(log_f_name,"w+")
     log_f.write("episode,timestep,reward\n")
 
-
     # printing and logging variables
     print_running_reward = 0
     print_running_episodes = 0
-
     log_running_reward = 0
     log_running_episodes = 0
-
     time_step = 0
     i_episode = 0
-
 
     # training loop
     while time_step <= max_training_timesteps:
@@ -297,7 +270,9 @@ def train():
                 print("model saved")
                 print("Elapsed Time  : ", datetime.now().replace(microsecond=0) - start_time)
                 print("--------------------------------------------------------------------------------------------")
-            #TODO the episodes never actually end
+            #TODO the agents don't seem to ever reach the goal in single agent
+            ## haven't seens success in multi-agent yet either
+            ## lol there isn't a goal for the agent to reach for some reason
             # break; if the episode is over
             if done:
                 break

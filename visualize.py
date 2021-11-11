@@ -153,7 +153,7 @@ def save_gif(env_name):
     # adjust following parameters to get desired duration, size (bytes) and smoothness of gif
     total_timesteps = 300
     step = 1
-    frame_duration = 150
+    frame_duration = 1
 
     # input images
     gif_images_dir = "PPO_gif_images/" + env_name + '/*.jpg'

@@ -46,7 +46,6 @@ class CollectGameEnv(MultiGridEnv):
         )
 
 
-
     def _gen_grid(self, width, height):
         self.grid = Grid(width, height)
 
@@ -56,9 +55,9 @@ class CollectGameEnv(MultiGridEnv):
         self.grid.vert_wall(self.world, 0, 0)
         self.grid.vert_wall(self.world, width-1, 0)
 
-        for number, index, reward in zip(self.num_goals, self.goals_index, self.goals_reward):
+        for number, index in zip(self.num_goals, self.goals_index):
             for i in range(number):
-                self.place_obj(Goal(self.world, index))
+                pos = self.place_obj(Goal(self.world, index, color=4))
 
         # Randomize the player start position and orientation
         for a in self.agents:
