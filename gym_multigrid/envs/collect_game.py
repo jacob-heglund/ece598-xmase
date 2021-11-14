@@ -30,7 +30,8 @@ class CollectGameEnv(MultiGridEnv):
 
         agents = []
         if not watcher:
-            agents.append(Collector(self.world, 2, view_size=7))
+            for i in agents_index:
+                agents.append(Agent(self.world, i, view_size=view_size))
         else:
             agents.append(Watcher(self.world, 1))
             agents.append(Collector(self.world, 2))
@@ -65,16 +66,16 @@ class CollectGameEnv(MultiGridEnv):
             self.place_agent(a)
 
 
-    # def _reward(self, i, rewards, reward=1):
-    #     """
-    #     Compute the reward to be given upon success
-    #     """
-    #     for j,a in enumerate(self.agents):
-    #         if a.index==i or a.index==0:
-    #             rewards[j]+=reward
-    #         if self.zero_sum:
-    #             if a.index!=i or a.index==0:
-    #                 rewards[j] -= reward
+    def _reward(self, i, rewards, reward=1):
+        """
+        Compute the reward to be given upon success
+        """
+        for j,a in enumerate(self.agents):
+            if a.index==i or a.index==0:
+                rewards[j]+=reward
+            if self.zero_sum:
+                if a.index!=i or a.index==0:
+                    rewards[j] -= reward
 
     def _handle_pickup(self, i, rewards, fwd_pos, fwd_cell):
         if fwd_cell:
@@ -107,7 +108,9 @@ class CollectGameWatcher(CollectGameEnv):
         super().__init__(size=10,
         num_goals=[1],
         agents_index = [1,2],
-        goals_index=[0],
+        balls_index=[0],
+        balls_reward=[1],
+        zero_sum=True,
         watcher=True)
-
-
+        self.action_set_watcher=SmallActions
+        self.action_space_watcher = spaces.Discrete(len(self.action_set_watcher.available))
