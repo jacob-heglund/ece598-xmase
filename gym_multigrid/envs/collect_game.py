@@ -24,6 +24,7 @@ class CollectGameEnv(MultiGridEnv):
         self.balls_index = balls_index
         self.balls_reward = balls_reward
         self.zero_sum = zero_sum
+        self.num_collected = 0
 
         self.world = World
 
@@ -86,12 +87,15 @@ class CollectGameEnv(MultiGridEnv):
                     fwd_cell.cur_pos = np.array([-1, -1])
                     self.grid.set(*fwd_pos, None)
                     self._reward(i, rewards, fwd_cell.reward)
+                    self.num_collected += 1
 
     def _handle_drop(self, i, rewards, fwd_pos, fwd_cell):
         pass
 
     def step(self, actions):
         obs, rewards, done, info = MultiGridEnv.step(self, actions)
+        if self.num_collected == self.num_balls:
+            done = True
         return obs, rewards, done, info
 
 
