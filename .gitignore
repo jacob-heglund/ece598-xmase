@@ -1,3 +1,9 @@
+logs/
+storage/
+.vscode/
+PPO_gif_images/
+PPO_gifs
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

@@ -4,32 +4,20 @@ from gym.envs.registration import register
 import argparse
 
 parser = argparse.ArgumentParser(description=None)
-parser.add_argument('-e', '--env', default='soccer', type=str)
+parser.add_argument('-e', '--env', default='watcher', type=str)
 
 args = parser.parse_args()
 
 def main():
 
-    if args.env == 'soccer':
-        register(
-            id='multigrid-soccer-v0',
-            entry_point='gym_multigrid.envs:SoccerGame4HEnv10x15N2',
-        )
-        env = gym.make('multigrid-soccer-v0')
-    
-    elif args.env == 'watcher':
+    if args.env == 'watcher':
         register(
             id='multigrid-watcher-v0',
             entry_point='gym_multigrid.envs:CollectGameWatcher',
         )
         env = gym.make('multigrid-watcher-v0')
-
     else:
-        register(
-            id='multigrid-collect-v0',
-            entry_point='gym_multigrid.envs:CollectGame4HEnv10x10N2',
-        )
-        env = gym.make('multigrid-collect-v0')
+        exit
 
     _ = env.reset()
 
