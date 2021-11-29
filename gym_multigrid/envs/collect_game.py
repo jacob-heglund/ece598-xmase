@@ -103,6 +103,14 @@ class CollectGameSingleAgent(CollectGameEnv):
         agents_index = [2],
         goals_index=[0])
 
+class CollectGameRat(CollectGameEnv):
+    def __init__(self):
+        super().__init__(size=5,
+        num_goals=[1],
+        agents_index = [1],
+        goals_index=[0],
+        view_size=1)
+
 class CollectGameWatcher(CollectGameEnv):
     def __init__(self):
         super().__init__(size=10,

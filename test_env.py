@@ -16,6 +16,12 @@ def main():
             entry_point='gym_multigrid.envs:CollectGameWatcher',
         )
         env = gym.make('multigrid-watcher-v0')
+    elif args.env == 'rat':
+        register(
+            id='multigrid-rat-v0',
+            entry_point='gym_multigrid.envs:CollectGameRat',
+        )
+        env = gym.make('multigrid-rat-v0')
     else:
         exit
 

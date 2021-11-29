@@ -1,3 +1,3 @@
 from gym_multigrid.envs.collect_game import CollectGameWatcher
 from gym_multigrid.envs.collect_game import CollectGameSingleAgent
-
+from gym_multigrid.envs.collect_game import CollectGameRat
