@@ -1305,7 +1305,7 @@ class MultiGridEnv(gym.Env):
 
         order = np.random.permutation(len(actions))
 
-        reward = 0
+        rewards = np.zeros(len(actions))
         done = False
 
         for i in order:
@@ -1334,7 +1334,7 @@ class MultiGridEnv(gym.Env):
                 if fwd_cell is not None:
                     if fwd_cell.type == 'goal':
                         done = True
-                        reward = self._reward()
+                        self._reward(i, rewards, 1)
                     # elif fwd_cell.type == 'switch':
                     #     self._handle_switch(i, rewards, fwd_pos, fwd_cell)
                 elif fwd_cell is None or fwd_cell.can_overlap():
@@ -1380,7 +1380,7 @@ class MultiGridEnv(gym.Env):
 
         obs=[self.objects.normalize_obs*ob for ob in obs]
 
-        return obs, reward, done, {}
+        return obs, rewards, done, {}
 
     def gen_obs_grid(self):
         """
