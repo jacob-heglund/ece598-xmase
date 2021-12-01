@@ -1,6 +1,7 @@
 from gym_multigrid.multigrid import *
 from gym_multigrid.watcher import *
 from gym import error, spaces, utils
+import random
 
 class CollectGameEnv(MultiGridEnv):
     """
@@ -91,7 +92,7 @@ class CollectGameEnv(MultiGridEnv):
 
     def step(self, actions):
         obs, rewards, done, info = MultiGridEnv.step(self, actions)
-        if self.num_collected == self.num_balls:
+        if self.num_collected == self.num_goals:
             done = True
         return obs, rewards, done, info
 
@@ -109,7 +110,55 @@ class CollectGameRat(CollectGameEnv):
         num_goals=[1],
         agents_index = [1],
         goals_index=[0],
-        view_size=1)
+        view_size=3)
+    
+    def _gen_grid(self, width, height):
+        self.grid = Grid(width, height)
+
+        # Generate the surrounding walls and make a T
+        self.grid.horz_wall(self.world, 0, 0)
+        self.grid.horz_wall(self.world, 0, height-1)
+        self.grid.vert_wall(self.world, 0, 0)
+        self.grid.vert_wall(self.world, width-1, 0)
+
+        # player starts at bottom of T
+        for a in self.agents:
+            pos = np.array((width - 1, int(width / 2)))
+            self.grid.set(*pos, a)
+            a.init_pos = pos
+            a.pos = pos
+            a.init_dir = 3
+            a.dir = 3
+
+        # goal is at top left or top right
+        for number, index in zip(self.num_goals, self.goals_index):
+            for i in range(number):
+                k = random.randint(0, 1)
+                # left
+                if k == 0:
+                    col = int(width / 2) - 1
+                # right
+                else:
+                    col = int(width / 2) + 1
+                pos = np.array((0, col))
+                obj = Goal(self.world, index)
+                self.grid.set(*pos, obj)
+                if obj is not None:
+                    obj.init_pos = pos
+                    obj.cur_pos = pos
+
+        # indicator is somewhere in front of the agent in the stem of T
+        col = self.np_random.randint(0, width - 2)
+        pos = np.array((0, col))
+        
+        # 2 is blue, 4 is yellow
+        k = random.randint(0, 1)
+        idx = k * 2 + 2
+        
+        light = Light(self.world, color=self.world.IDX_TO_COLOR[idx])
+        self.grid.set(*pos, light)
+        light.init_pos = pos
+        light.cur_pos = pos
 
 class CollectGameWatcher(CollectGameEnv):
     def __init__(self):

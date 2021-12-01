@@ -36,10 +36,10 @@ def main():
         #ac = [env.action_space.sample() for _ in range(nb_agents)]
         actions = []
         for agent in range(nb_agents):
-            if env.agents[agent].watcher:
-                actions.append(env.action_space_watcher.sample())
-            else:
-                actions.append(env.action_space.sample())
+            #if env.agents[agent].watcher:
+            #    actions.append(env.action_space_watcher.sample())
+            #else:
+            actions.append(env.action_space.sample())
 
         obs, _, done, _ = env.step(actions)
 

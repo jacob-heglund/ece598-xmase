@@ -243,6 +243,20 @@ class Floor(WorldObj):
             (1, 1)
         ])
 
+class Light(WorldObj):
+    """
+    Indicator light for rat maze
+    """
+
+    def __init__(self, world, color='blue'):
+        super().__init__(world, 'floor', color)
+
+    def can_overlap(self):
+        return True
+
+    def render(self, img):
+        fill_coords(img, point_in_rect(0, 1, 0, 1), COLORS[self.color])
+
 
 class Floor_Colored(WorldObj):
     """
