@@ -118,7 +118,13 @@ class CollectGameRat(CollectGameEnv):
         # Generate the surrounding walls
         #self.grid.wall_rect(0, 0, width, height)
         self.grid.horz_wall(self.world, 0, 0)
+        self.grid.horz_wall(self.world, 0, 1)
+        self.grid.horz_wall(self.world, 2, 2)
+
         self.grid.horz_wall(self.world, 0, height-1)
+        self.grid.horz_wall(self.world, 0, height-2)
+        self.grid.horz_wall(self.world, 2, height-3)
+
         self.grid.vert_wall(self.world, 0, 0)
         self.grid.vert_wall(self.world, width-1, 0)
 
@@ -149,13 +155,11 @@ class CollectGameRat(CollectGameEnv):
                     obj.cur_pos = pos
 
         # indicator is somewhere in front of the agent in the stem of T
-        col = self.np_random.randint(0, width - 2)
-        pos = np.array((1, col + 1))
+        col = random.randint(0, width - 3)
+        pos = np.array((col + 1, int(width / 2)))
         
-        # 2 is blue, 4 is yellow
-        k = random.randint(0, 1)
+        # 2 is blue (left), 4 is yellow (right)
         idx = k * 2 + 2
-        
         light = Light(self.world, color=self.world.IDX_TO_COLOR[idx])
         self.grid.set(*pos, light)
         light.init_pos = pos

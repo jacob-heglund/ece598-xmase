@@ -253,6 +253,9 @@ class Light(WorldObj):
 
     def can_overlap(self):
         return True
+    
+    def can_contain(self):
+        return True
 
     def render(self, img):
         fill_coords(img, point_in_rect(0, 1, 0, 1), COLORS[self.color])
