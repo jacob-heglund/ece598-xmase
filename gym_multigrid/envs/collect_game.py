@@ -106,7 +106,7 @@ class CollectGameSingleAgent(CollectGameEnv):
 
 class CollectGameRat(CollectGameEnv):
     def __init__(self):
-        super().__init__(size=5,
+        super().__init__(size=7,
         num_goals=[1],
         agents_index = [1],
         goals_index=[0],
@@ -115,7 +115,8 @@ class CollectGameRat(CollectGameEnv):
     def _gen_grid(self, width, height):
         self.grid = Grid(width, height)
 
-        # Generate the surrounding walls and make a T
+        # Generate the surrounding walls
+        #self.grid.wall_rect(0, 0, width, height)
         self.grid.horz_wall(self.world, 0, 0)
         self.grid.horz_wall(self.world, 0, height-1)
         self.grid.vert_wall(self.world, 0, 0)
@@ -123,7 +124,7 @@ class CollectGameRat(CollectGameEnv):
 
         # player starts at bottom of T
         for a in self.agents:
-            pos = np.array((width - 1, int(width / 2)))
+            pos = np.array((width - 2, int(width / 2)))
             self.grid.set(*pos, a)
             a.init_pos = pos
             a.pos = pos
@@ -140,7 +141,7 @@ class CollectGameRat(CollectGameEnv):
                 # right
                 else:
                     col = int(width / 2) + 1
-                pos = np.array((0, col))
+                pos = np.array((1, col))
                 obj = Goal(self.world, index)
                 self.grid.set(*pos, obj)
                 if obj is not None:
@@ -149,7 +150,7 @@ class CollectGameRat(CollectGameEnv):
 
         # indicator is somewhere in front of the agent in the stem of T
         col = self.np_random.randint(0, width - 2)
-        pos = np.array((0, col))
+        pos = np.array((1, col + 1))
         
         # 2 is blue, 4 is yellow
         k = random.randint(0, 1)
