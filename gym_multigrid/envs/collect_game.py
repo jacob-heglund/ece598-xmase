@@ -155,8 +155,9 @@ class CollectGameRat(CollectGameEnv):
                     obj.cur_pos = pos
 
         # indicator is somewhere in front of the agent in the stem of T
-        col = random.randint(0, width - 3)
-        pos = np.array((col + 1, int(width / 2)))
+        # col = random.randint(0, width - 3)
+        # pos = np.array((col + 1, int(width / 2)))
+        pos = np.array((0, int(width / 2)))
         
         # 2 is blue (left), 4 is yellow (right)
         idx = k * 2 + 2
