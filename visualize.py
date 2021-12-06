@@ -157,7 +157,7 @@ def save_gif(args, img_buffer):
     if not os.path.exists(gif_dir):
         os.makedirs(gif_dir)
 
-    gif_dir = f"{gif_dir}/{args.policy_env}"
+    gif_dir = f"{gif_dir}/{args.env}"
     if not os.path.exists(gif_dir):
         os.makedirs(gif_dir)
 
