@@ -13,13 +13,11 @@ import imageio
 import gym
 import random
 
-# import pybullet_envs
-
 from PPO import PPO
 import pdb
 
-############################# save images for gif ##############################
-def visualize(has_continuous_action_space=False, max_ep_len=1000, action_std=0.6):
+
+def evaluate(has_continuous_action_space=False, max_ep_len=1000, action_std=0.6):
     parser = argparse.ArgumentParser()
     parser.add_argument("--env", type=str, default="multigrid-rat-50-v0", choices=["multigrid-rat-0-v0","multigrid-rat-10-v0", "multigrid-rat-50-v0", "multigrid-rat-100-v0"], help="Environment used to evaluate the agent policy")
     parser.add_argument("--policy_env", type=str, default="multigrid-rat-50-v0", choices=["multigrid-rat-0-v0","multigrid-rat-10-v0", "multigrid-rat-50-v0", "multigrid-rat-100-v0"], help="Agent policy loaded for evaluation")
@@ -52,19 +50,17 @@ def visualize(has_continuous_action_space=False, max_ep_len=1000, action_std=0.6
 
     else:
         raise NotImplementedError
+    env = gym.make(args.env)
 
     n_agents = 1
     obs_size = [3]
-
-    K_epochs = 80               # update policy for K epochs
-    eps_clip = 0.2              # clip parameter for PPO
-    gamma = 0.99                # discount factor
-
-    lr_actor = 0.0003         # learning rate for actor
-    lr_critic = 0.001         # learning rate for critic
     obs_dim = 6
 
-    env = gym.make(args.env)
+    K_epochs = 80
+    eps_clip = 0.2
+    gamma = 0.99
+    lr_actor = 0.0003
+    lr_critic = 0.001
 
     #  action space dimension
     if has_continuous_action_space:
@@ -96,21 +92,28 @@ def visualize(has_continuous_action_space=False, max_ep_len=1000, action_std=0.6
     test_running_reward = 0
     frame_count = 0
     img_buffer = []
+    obs_buffer = []
+    reward_buffer = []
 
     for ep in range(1, args.n_episodes+1):
         obs = env.reset()
+        obs_buffer.append(obs)
         ep_reward = 0
-        #TODO implement image buffer instead of saving each frame to disk
-        # render first frame of env
 
+        # render first frame of env
         image_render(img_buffer, args, env, ep, t=frame_count, done=False, save=True)
 
         for t in range(1, max_ep_len+1):
-            # selection action with policy
+            # select action with policy
             actions = []
+            action_probs = []
             for i in range(n_agents):
-                actions.append(ppo_agents[i].select_action(obs[i]))
+                action, action_prob = ppo_agents[i].select_action(obs[i])
+                actions.append(action)
+                action_probs.append(action_prob)
+
             obs, reward, done, _ = env.step(actions)
+            obs_buffer.append(obs)
             ep_reward += reward
             image_render(img_buffer, args, env, ep, frame_count, done, ep_reward, save=True)
             frame_count += 1
@@ -196,4 +199,4 @@ def image_render(img_buffer, args, env, ep, t, done, ep_reward=None, save=True):
 
 
 if __name__ == '__main__':
-    visualize()
+    evaluate()
