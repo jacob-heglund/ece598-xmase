@@ -9,7 +9,6 @@ import pdb
 
 print("============================================================================================")
 
-
 # set device to cpu or cuda
 device = torch.device('cpu')
 
@@ -20,14 +19,7 @@ if(torch.cuda.is_available()):
 else:
     print("Device set to : cpu")
 
-print("============================================================================================")
-
-
-
-
 ################################## PPO Policy ##################################
-
-
 class RolloutBuffer:
     def __init__(self):
         self.actions = []
@@ -62,9 +54,17 @@ class ActorCritic(nn.Module):
                             nn.Linear(64, 64),
                             nn.Tanh(),
                             nn.Linear(64, action_dim),
-                            nn.Tanh()
+                            nn.Softmax(dim=-1)
                         )
         else:
+            # self.actor = nn.Sequential(
+            #                 nn.Linear(obs_dim, 64),
+            #                 nn.Tanh(),
+            #                 nn.Linear(64, 64),
+            #                 nn.Tanh(),
+            #                 nn.Linear(64, action_dim),
+            #             )
+
             self.actor = nn.Sequential(
                             nn.Conv2d(self.obs_dim, 32, kernel_size=4, padding=1),
                             nn.ReLU(),
@@ -77,7 +77,6 @@ class ActorCritic(nn.Module):
                             nn.Softmax(dim=-1)
                         )
 
-            # critic
             # self.critic = nn.Sequential(
             #                 nn.Linear(obs_dim, 64),
             #                 nn.Tanh(),
@@ -312,8 +311,4 @@ class PPO:
     def load(self, checkpoint_path):
         self.policy_old.load_state_dict(torch.load(checkpoint_path, map_location=lambda storage, loc: storage))
         self.policy.load_state_dict(torch.load(checkpoint_path, map_location=lambda storage, loc: storage))
-
-
-
-
 

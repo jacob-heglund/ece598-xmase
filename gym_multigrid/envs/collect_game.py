@@ -3,6 +3,8 @@ from gym_multigrid.watcher import *
 from gym import error, spaces, utils
 import random
 
+
+
 class CollectGameEnv(MultiGridEnv):
     """
     Environment in which the agents have to reach the goal
@@ -67,16 +69,16 @@ class CollectGameEnv(MultiGridEnv):
             self.place_agent(a)
 
 
-    def _reward(self, i, rewards, reward=1):
-        """
-        Compute the reward to be given upon success
-        """
-        for j,a in enumerate(self.agents):
-            if a.index==i or a.index==0:
-                rewards[j]+=reward
-            if self.zero_sum:
-                if a.index!=i or a.index==0:
-                    rewards[j] -= reward
+    # def _reward(self, i, rewards, reward=1):
+    #     """
+    #     Compute the reward to be given upon success
+    #     """
+    #     for j,a in enumerate(self.agents):
+    #         if a.index==i or a.index==0:
+    #             rewards[j]+=reward
+    #         if self.zero_sum:
+    #             if a.index!=i or a.index==0:
+    #                 rewards[j] -= reward
 
     def _handle_pickup(self, i, rewards, fwd_pos, fwd_cell):
         if fwd_cell:
@@ -97,13 +99,6 @@ class CollectGameEnv(MultiGridEnv):
         return obs, rewards, done, info
 
 
-class CollectGameSingleAgent(CollectGameEnv):
-    def __init__(self):
-        super().__init__(size=10,
-        num_goals=[1],
-        agents_index = [2],
-        goals_index=[0])
-
 class CollectGameRat(CollectGameEnv):
     def __init__(self):
         super().__init__(size=7,
@@ -111,7 +106,7 @@ class CollectGameRat(CollectGameEnv):
         agents_index = [1],
         goals_index=[0],
         view_size=3)
-    
+
     def _gen_grid(self, width, height):
         self.grid = Grid(width, height)
 
@@ -128,43 +123,94 @@ class CollectGameRat(CollectGameEnv):
         self.grid.vert_wall(self.world, 0, 0)
         self.grid.vert_wall(self.world, width-1, 0)
 
-        # player starts at bottom of T
+        # player starts at top of maze
         for a in self.agents:
             pos = np.array((width - 2, int(width / 2)))
             self.grid.set(*pos, a)
             a.init_pos = pos
             a.pos = pos
-            a.init_dir = 3
-            a.dir = 3
+            a.init_dir = 2
+            a.dir = 2
 
-        # goal is at top left or top right
+        # goal is at left or right position
         for number, index in zip(self.num_goals, self.goals_index):
             for i in range(number):
-                k = random.randint(0, 1)
-                # left
-                if k == 0:
-                    col = int(width / 2) - 1
-                # right
+                prob = random.random()
+                if prob <= self.prob_real_goal_left:
+                    k = 0
                 else:
-                    col = int(width / 2) + 1
-                pos = np.array((1, col))
-                obj = Goal(self.world, index)
-                self.grid.set(*pos, obj)
-                if obj is not None:
-                    obj.init_pos = pos
-                    obj.cur_pos = pos
+                    k = 1
+
+                # columns for "left" or "right" possible goal positions
+                cols = [int(width / 2) - 1, int(width / 2) + 1]
+                if k == 0:
+                    self.goal_pos = "Left"
+                    self.signal_color = "Blue"
+                    fake_idx = 1
+                elif k == 1:
+                    self.goal_pos = "Right"
+                    self.signal_color = "Yellow"
+                    fake_idx = 0
+
+                pos_goal = np.array((1, cols[k]))
+                pos_fake = np.array((1, cols[fake_idx]))
+                goal = Goal(self.world, index, reward=1)
+                fake_goal = Goal(self.world, index, reward=0)
+                self.grid.set(*pos_goal, goal)
+                self.grid.set(*pos_fake, fake_goal)
+
+                if goal is not None:
+                    goal.init_pos = pos_goal
+                    goal.cur_pos = pos_goal
+
+                if fake_goal is not None:
+                    fake_goal.init_pos = pos_fake
+                    fake_goal.cur_pos = pos_fake
 
         # indicator is somewhere in front of the agent in the stem of T
         # col = random.randint(0, width - 3)
         # pos = np.array((col + 1, int(width / 2)))
         pos = np.array((0, int(width / 2)))
-        
+
         # 2 is blue (left), 4 is yellow (right)
         idx = k * 2 + 2
         light = Light(self.world, color=self.world.IDX_TO_COLOR[idx])
         self.grid.set(*pos, light)
         light.init_pos = pos
         light.cur_pos = pos
+
+
+class CollectGameRat_0(CollectGameRat):
+    def __init__(self):
+        self.prob_real_goal_left = 0.0
+        super().__init__()
+
+
+class CollectGameRat_10(CollectGameRat):
+    def __init__(self):
+        self.prob_real_goal_left = 0.1
+        super().__init__()
+
+
+class CollectGameRat_50(CollectGameRat):
+    def __init__(self):
+        self.prob_real_goal_left = 0.5
+        super().__init__()
+
+
+class CollectGameRat_100(CollectGameRat):
+    def __init__(self):
+        self.prob_real_goal_left = 1.0
+        super().__init__()
+
+
+class CollectGameSingleAgent(CollectGameEnv):
+    def __init__(self):
+        super().__init__(size=10,
+        num_goals=[1],
+        agents_index = [2],
+        goals_index=[0])
+
 
 class CollectGameWatcher(CollectGameEnv):
     def __init__(self):

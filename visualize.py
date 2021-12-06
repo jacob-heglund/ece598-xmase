@@ -7,50 +7,54 @@ from gym.envs.registration import register
 
 import torch
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
+import imageio
 
 import gym
+import random
 
 # import pybullet_envs
 
 from PPO import PPO
 import pdb
 
-
-
-"""
-One frame corresponding to each timestep is saved in a folder :
-
-PPO_gif_images/env_name/000001.jpg
-PPO_gif_images/env_name/000002.jpg
-PPO_gif_images/env_name/000003.jpg
-...
-...
-...
-
-
-if this section is run multiple times or for multiple episodes for the same env_name;
-then the saved images will be overwritten.
-
-"""
-
 ############################# save images for gif ##############################
+def visualize(has_continuous_action_space=False, max_ep_len=1000, action_std=0.6):
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--env", type=str, default="multigrid-rat-50-v0", choices=["multigrid-rat-0-v0","multigrid-rat-10-v0", "multigrid-rat-50-v0", "multigrid-rat-100-v0"], help="Environment used to evaluate the agent policy")
+    parser.add_argument("--policy_env", type=str, default="multigrid-rat-50-v0", choices=["multigrid-rat-0-v0","multigrid-rat-10-v0", "multigrid-rat-50-v0", "multigrid-rat-100-v0"], help="Agent policy loaded for evaluation")
+    parser.add_argument("--n_episodes", type=int, default=10, help="Number of evaluation episodes")
+    args = parser.parse_args()
 
+    if args.env == "multigrid-rat-0-v0":
+        register(
+            id="multigrid-rat-0-v0",
+            entry_point="gym_multigrid.envs:CollectGameRat_0",
+        )
 
-def save_gif_images(env_name, has_continuous_action_space, max_ep_len, action_std):
+    elif args.env == "multigrid-rat-10-v0":
+        register(
+            id="multigrid-rat-10-v0",
+            entry_point="gym_multigrid.envs:CollectGameRat_10",
+        )
 
-    print("============================================================================================")
-    if env_name == "multigrid-single-agent-v0":
-        n_agents = 1
-        obs_size = [7]
+    elif args.env == "multigrid-rat-50-v0":
+        register(
+            id="multigrid-rat-50-v0",
+            entry_point="gym_multigrid.envs:CollectGameRat_50",
+        )
 
-    elif env_name == "multigrid-watcher-v0":
-        n_agents = 2
-        # agent 0 is the watcher with larger visual range
-        # agent 1 is the collector with smaller visual range
-        obs_size = [7, 3]
+    elif args.env == "multigrid-rat-100-v0":
+        register(
+            id="multigrid-rat-100-v0",
+            entry_point="gym_multigrid.envs:CollectGameRat_100",
+        )
 
-    total_test_episodes = 2     # save gif for this many episodes
+    else:
+        raise NotImplementedError
+
+    n_agents = 1
+    obs_size = [3]
 
     K_epochs = 80               # update policy for K epochs
     eps_clip = 0.2              # clip parameter for PPO
@@ -60,7 +64,7 @@ def save_gif_images(env_name, has_continuous_action_space, max_ep_len, action_st
     lr_critic = 0.001         # learning rate for critic
     obs_dim = 6
 
-    env = gym.make(env_name)
+    env = gym.make(args.env)
 
     #  action space dimension
     if has_continuous_action_space:
@@ -68,48 +72,38 @@ def save_gif_images(env_name, has_continuous_action_space, max_ep_len, action_st
     else:
         action_dim = env.action_space.n
 
-    # make directory for saving gif images
-    gif_images_dir = "PPO_gif_images" + '/'
-    if not os.path.exists(gif_images_dir):
-        os.makedirs(gif_images_dir)
-
-    # make environment directory for saving gif images
-    gif_images_dir = gif_images_dir + '/' + env_name + '/'
-    if not os.path.exists(gif_images_dir):
-        os.makedirs(gif_images_dir)
-
-    # make directory for gif
-    gif_dir = "PPO_gifs" + '/'
-    if not os.path.exists(gif_dir):
-        os.makedirs(gif_dir)
-
-    # make environment directory for gif
-    gif_dir = gif_dir + '/' + env_name  + '/'
-    if not os.path.exists(gif_dir):
-        os.makedirs(gif_dir)
-
     ppo_agents = []
     for i in range(n_agents):
         ppo_agents.append(PPO(obs_dim, obs_size[i], action_dim, lr_actor, lr_critic, gamma, K_epochs, eps_clip, has_continuous_action_space, action_std))
 
     # preTrained weights directory
+    random_seed = 1
+    run_num_pretrained = 0
 
-    random_seed = 0             #### set this to load a particular checkpoint trained on random seed
-    run_num_pretrained = 0      #### set this to load a particular checkpoint num
+    print("setting random seed to ", random_seed)
+    torch.manual_seed(random_seed)
+    env.seed(random_seed)
+    np.random.seed(random_seed)
+    random.seed(random_seed)
 
-    directory = "storage" + '/' + env_name + '/'
+    directory = "storage" + '/' + args.policy_env + '/'
 
     for i in range(n_agents):
-        checkpoint_path = directory + f"PPO_{args.env}_seed_{random_seed}_run_{run_num_pretrained}_agent_{i}.pth"
+        checkpoint_path = directory + f"PPO_{args.policy_env}_seed_{random_seed}_run_{run_num_pretrained}_agent_{i}.pth"
         ppo_agents[i].load(checkpoint_path)
 
     print("--------------------------------------------------------------------------------------------")
     test_running_reward = 0
+    frame_count = 0
+    img_buffer = []
 
-    for ep in range(1, total_test_episodes+1):
-
+    for ep in range(1, args.n_episodes+1):
         obs = env.reset()
         ep_reward = 0
+        #TODO implement image buffer instead of saving each frame to disk
+        # render first frame of env
+
+        image_render(img_buffer, args, env, ep, t=frame_count, done=False, save=True)
 
         for t in range(1, max_ep_len+1):
             # selection action with policy
@@ -118,12 +112,15 @@ def save_gif_images(env_name, has_continuous_action_space, max_ep_len, action_st
                 actions.append(ppo_agents[i].select_action(obs[i]))
             obs, reward, done, _ = env.step(actions)
             ep_reward += reward
-
-            img = env.render(mode = 'rgb_array')
-            img = Image.fromarray(img)
-            img.save(gif_images_dir + '/' + str(t).zfill(6) + '.jpg')
+            image_render(img_buffer, args, env, ep, frame_count, done, ep_reward, save=True)
+            frame_count += 1
 
             if done:
+                # add some frames to make the gif "hang" at the end
+                n_end_frames = 10
+                for end_frames in range(n_end_frames):
+                    frame_count += 1
+                    image_render(img_buffer, args, env, ep, frame_count, done, ep_reward, save=True)
                 break
 
         # clear buffer
@@ -131,78 +128,72 @@ def save_gif_images(env_name, has_continuous_action_space, max_ep_len, action_st
             ppo_agents[i].buffer.clear()
 
         test_running_reward +=  ep_reward
-        print('Episode: {} \t\t Reward: {}'.format(ep, round(ep_reward, 2)))
+        print('Episode: {} \t Reward: {}'.format(ep, round(ep_reward.item(), 2)))
         ep_reward = 0
 
     env.close()
 
     print("============================================================================================")
-    print("total number of frames / timesteps / images saved : ", t)
-    avg_test_reward = test_running_reward / total_test_episodes
-    avg_test_reward = round(avg_test_reward, 2)
+    print("total number of frames / timesteps / images saved : ", frame_count)
+    avg_test_reward = test_running_reward / args.n_episodes
+    avg_test_reward = round(avg_test_reward.item(), 2)
     print("average test reward : " + str(avg_test_reward))
     print("============================================================================================")
 
+    # save gif to disk
+    save_gif(args, img_buffer)
 
-def save_gif(env_name):
+
+def save_gif(args, img_buffer):
 
     print("============================================================================================")
-
-    gif_num = 0     #### change this to prevent overwriting gifs in same env_name folder
 
     # adjust following parameters to get desired duration, size (bytes) and smoothness of gif
     total_timesteps = 300
     step = 1
-    frame_duration = 1
 
-    # input images
-    gif_images_dir = "PPO_gif_images/" + env_name + '/*.jpg'
-
-    # ouput gif path
+    # output path
     gif_dir = "PPO_gifs"
     if not os.path.exists(gif_dir):
         os.makedirs(gif_dir)
 
-    gif_dir = gif_dir + '/' + env_name
+    gif_dir = f"{gif_dir}/{args.policy_env}"
     if not os.path.exists(gif_dir):
         os.makedirs(gif_dir)
 
-    gif_path = gif_dir + '/PPO_' + env_name + str(gif_num) + '.gif'
-
-    img_paths = sorted(glob.glob(gif_images_dir))
-    img_paths = img_paths[:total_timesteps]
-    img_paths = img_paths[::step]
-
-    print("total frames in gif : ", len(img_paths))
-    print("total duration of gif : " + str(round(len(img_paths) * frame_duration / 1000, 2)) + " seconds")
+    print("total frames in gif : ", len(img_buffer))
 
     # save gif
-    img, *imgs = [Image.open(f) for f in img_paths]
-    img.save(fp=gif_path, format='GIF', append_images=imgs, save_all=True, optimize=True, duration=frame_duration, loop=0)
-
+    gif_path = f"{gif_dir}/policy_{args.policy_env}.gif"
+    imageio.mimsave(gif_path, img_buffer, duration=0.15)
     print("saved gif at : ", gif_path)
     print("============================================================================================")
 
 
+def image_render(img_buffer, args, env, ep, t, done, ep_reward=None, save=True):
+    img = env.render(mode="rgb_array", tile_size=75)
+    img = Image.fromarray(img).transpose(Image.ROTATE_90)
+    I1 = ImageDraw.Draw(img)
+    font = ImageFont.truetype("Montserrat-Black.otf", 25)
+    I1.text((10, 10), f"Goal Position: {env.goal_pos} ({env.signal_color} Signal)", fill=(255, 180, 0), font=font)
+    I1.text((10, 40), f"Episode: {ep}", fill=(255, 180, 0), font=font)
+
+    env_str = f"{str(args.env).split('-')[2]}% Left Goal"
+    policy_str = f"{str(args.policy_env).split('-')[2]}% Left Goal"
+    I1.text((325, 90), f"Environment:\n{env_str}", fill=(255, 180, 0), font=font)
+    I1.text((325, 160), f"Agent Policy:\n{policy_str}", fill=(255, 180, 0), font=font)
+    if done:
+        if ep_reward > 0:
+            choice = "Correct"
+            choice_color = (0, 255, 0)
+        else:
+            choice = "Incorrect"
+            choice_color = (255, 0, 0)
+        I1.text((10, 70), f"{choice}", fill=choice_color, font=font)
+
+    if save:
+        img_buffer.append(img)
+
+
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--env", type=str, default="multigrid-single-agent-v0")
-    args = parser.parse_args()
-
-    if args.env == "multigrid-single-agent-v0":
-        register(
-            id="multigrid-single-agent-v0",
-            entry_point="gym_multigrid.envs:CollectGameSingleAgent",
-        )
-
-    elif args.env == "multigrid-watcher-v0":
-        register(
-            id="multigrid-watcher-v0",
-            entry_point="gym_multigrid.envs:CollectGameWatcher",
-            )
-
-    # save .jpg images in PPO_gif_images folder
-    save_gif_images(args.env, has_continuous_action_space=False, max_ep_len=1000, action_std=0.6)
-
-    # save .gif in PPO_gifs folder using .jpg images
-    save_gif(args.env)
+    visualize()

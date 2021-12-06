@@ -253,7 +253,7 @@ class Light(WorldObj):
 
     def can_overlap(self):
         return True
-    
+
     def can_contain(self):
         return True
 
@@ -1070,13 +1070,19 @@ class MultiGridEnv(gym.Env):
         OPENDED_DOOR_IDS = '_'
 
         # Map agent's direction to short string
-        AGENT_DIR_TO_STR = {
-            0: '>',
-            1: 'V',
-            2: '<',
-            3: '^'
-        }
+        # AGENT_DIR_TO_STR = {
+        #     0: '>',
+        #     1: 'V',
+        #     2: '<',
+        #     3: '^'
+        # }
 
+        AGENT_DIR_TO_STR = {
+            0: '^',
+            1: '>',
+            2: 'V',
+            3: '<'
+        }
         str = ''
 
         for j in range(self.grid.height):
@@ -1130,8 +1136,8 @@ class MultiGridEnv(gym.Env):
         """
         Compute the reward to be given upon success
         """
-
         return reward - 0.9 * (self.step_count / self.max_steps)
+        return reward
 
     def _rand_int(self, low, high):
         """
@@ -1337,7 +1343,10 @@ class MultiGridEnv(gym.Env):
                 if fwd_cell is not None:
                     if fwd_cell.type == 'goal':
                         done = True
-                        self._reward(i, rewards, 1)
+                        # rewards[i] = self._reward(reward = 1)
+                        # only the "true" goal gives reward, the fake one doesn't
+                        rewards[i] = self._reward(reward = fwd_cell.reward)
+
                     # elif fwd_cell.type == 'switch':
                     #     self._handle_switch(i, rewards, fwd_pos, fwd_cell)
                 elif fwd_cell is None or fwd_cell.can_overlap():
