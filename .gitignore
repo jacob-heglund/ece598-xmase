@@ -3,6 +3,7 @@ storage/
 .vscode/
 PPO_gif_images/
 PPO_gifs
+PPO_agent
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

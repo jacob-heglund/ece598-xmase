@@ -1377,6 +1377,7 @@ class MultiGridEnv(gym.Env):
 
             # Done action (not used by default)
             elif actions[i] == self.actions.done:
+                pdb.set_trace()
                 pass
 
             else:

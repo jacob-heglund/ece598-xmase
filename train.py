@@ -17,76 +17,13 @@ import pdb
 
 ################################### Training ###################################
 
-def train():
-    print("============================================================================================")
-    ####### initialize environment hyperparameters ######
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--env", type=str, default="multigrid-rat-50-v0", choices=["multigrid-rat-0-v0","multigrid-rat-10-v0", "multigrid-rat-50-v0", "multigrid-rat-100-v0"], help="Environment used to evaluate the agent policy")
-    args = parser.parse_args()
-
-    if args.env == "multigrid-rat-0-v0":
-        register(
-            id="multigrid-rat-0-v0",
-            entry_point="gym_multigrid.envs:CollectGameRat_0",
-        )
-
-    elif args.env == "multigrid-rat-10-v0":
-        register(
-            id="multigrid-rat-10-v0",
-            entry_point="gym_multigrid.envs:CollectGameRat_10",
-        )
-
-    elif args.env == "multigrid-rat-50-v0":
-        register(
-            id="multigrid-rat-50-v0",
-            entry_point="gym_multigrid.envs:CollectGameRat_50",
-        )
-
-    elif args.env == "multigrid-rat-100-v0":
-        register(
-            id="multigrid-rat-100-v0",
-            entry_point="gym_multigrid.envs:CollectGameRat_100",
-        )
-
-    else:
-        raise NotImplementedError
-
-    n_agents = 1
-    obs_size = [3]
-    obs_dim = 6
-    has_continuous_action_space = False  # continuous action space; else discrete
-
-    max_ep_len = 1000                   # max timesteps in one episode
-    max_training_timesteps = int(3e6)   # break training loop if timeteps > max_training_timesteps
-
-    print_freq = max_ep_len * 10        # print avg reward in the interval (in num timesteps)
-    log_freq = max_ep_len * 2           # log avg reward in the interval (in num timesteps)
-    save_model_freq = int(10000)          # save model frequency (in num timesteps)
-
-    action_std = 0.6                    # starting std for action distribution (Multivariate Normal)
-    action_std_decay_rate = 0.05        # linearly decay action_std (action_std = action_std - action_std_decay_rate)
-    min_action_std = 0.1                # minimum action_std (stop decay after action_std <= min_action_std)
-    action_std_decay_freq = int(2.5e5)  # action_std decay frequency (in num timesteps)
-
-    stop_training_thres = 0.99
-
-    #####################################################
-    ## Note : print/log frequencies should be > than max_ep_len
-    ################ PPO hyperparameters ################
-    update_timestep = max_ep_len * 4
-    K_epochs = 80
-    eps_clip = 0.2
-    gamma = 0.99
-    lr_actor = 0.0003
-    lr_critic = 0.001
-    random_seed = 1
-
-    #####################################################
-    print("training environment name : " + args.env)
-    env = gym.make(args.env)
+def train(args, env):
+    print_freq = args.max_ep_len * 10        # print avg reward in the interval (in num timesteps)
+    log_freq = args.max_ep_len * 2           # log avg reward in the interval (in num timesteps)
+    update_timestep = args.max_ep_len * 4
 
     # action space dimension
-    if has_continuous_action_space:
+    if args.has_continuous_action_space:
         action_dim = env.action_space.shape[0]
     else:
         action_dim = env.action_space.n
@@ -117,10 +54,6 @@ def train():
     #####################################################
     ################### checkpointing ###################
 
-    run_num_pretrained = 0      #### change this to prevent overwriting weights in same args.env folder
-    # 0 is trained to turn left no matter what (100% of rewards are for turning left)
-
-
     directory = "storage"
     if not os.path.exists(directory):
           os.makedirs(directory)
@@ -131,68 +64,16 @@ def train():
 
 
     checkpoint_paths = []
-    for i in range(n_agents):
-        checkpoint_path = directory + f"PPO_{args.env}_seed_{random_seed}_run_{run_num_pretrained}_agent_{i}.pth"
+    for i in range(args.n_agents):
+        checkpoint_path = directory + f"PPO_{args.env}_seed_{args.random_seed}_run_{args.run_num_pretrained}_agent_{i}.pth"
         checkpoint_paths.append(checkpoint_path)
         print("save checkpoint path : " + checkpoint_path)
 
-    #####################################################
-    ############# print all hyperparameters #############
-    print("--------------------------------------------------------------------------------------------")
-
-    print("max training timesteps : ", max_training_timesteps)
-    print("max timesteps per episode : ", max_ep_len)
-
-    print("model saving frequency : " + str(save_model_freq) + " timesteps")
-    print("log frequency : " + str(log_freq) + " timesteps")
-    print("printing average reward over episodes in last : " + str(print_freq) + " timesteps")
-
-    print("--------------------------------------------------------------------------------------------")
-
-    print("obs space dimension : ", obs_dim)
-    print("action space dimension : ", action_dim)
-
-    print("--------------------------------------------------------------------------------------------")
-
-    if has_continuous_action_space:
-        print("Initializing a continuous action space policy")
-        print("--------------------------------------------------------------------------------------------")
-        print("starting std of action distribution : ", action_std)
-        print("decay rate of std of action distribution : ", action_std_decay_rate)
-        print("minimum std of action distribution : ", min_action_std)
-        print("decay frequency of std of action distribution : " + str(action_std_decay_freq) + " timesteps")
-
-    else:
-        print("Initializing a discrete action space policy")
-
-    print("--------------------------------------------------------------------------------------------")
-
-    print("PPO update frequency : " + str(update_timestep) + " timesteps")
-    print("PPO K epochs : ", K_epochs)
-    print("PPO epsilon clip : ", eps_clip)
-    print("discount factor (gamma) : ", gamma)
-
-    print("--------------------------------------------------------------------------------------------")
-
-    print("optimizer learning rate actor : ", lr_actor)
-    print("optimizer learning rate critic : ", lr_critic)
-
-    print("--------------------------------------------------------------------------------------------")
-    print("setting random seed to ", random_seed)
-    torch.manual_seed(random_seed)
-    env.seed(random_seed)
-    np.random.seed(random_seed)
-    random.seed(random_seed)
-
-    #####################################################
-    print("============================================================================================")
-    ################# training procedure ################
 
     # initialize PPO agents
     ppo_agents = []
-    for i in range(n_agents):
-        ppo_agents.append(PPO(obs_dim, obs_size[i], action_dim, lr_actor, lr_critic, gamma, K_epochs, eps_clip, has_continuous_action_space, action_std))
-
+    for i in range(args.n_agents):
+        ppo_agents.append(PPO(args.obs_dim, args.obs_size, action_dim, args.lr_actor, args.lr_critic, args.gamma, args.K_epochs, args.eps_clip, args.has_continuous_action_space, args.action_std))
 
     # track total training time
     start_time = datetime.now().replace(microsecond=0)
@@ -212,20 +93,21 @@ def train():
     i_episode = 0
 
     # training loop
-    while time_step <= max_training_timesteps:
+    while time_step <= args.max_training_timesteps:
 
         obs = env.reset()
         current_ep_reward = 0
 
-        for t in range(1, max_ep_len+1):
+        for t in range(1, args.max_ep_len+1):
             # select action with policy
             actions = []
-            for i in range(n_agents):
-                actions.append(ppo_agents[i].select_action(obs[i]))
+            for i in range(args.n_agents):
+                action, _ = ppo_agents[i].select_action(obs[i])
+                actions.append(action)
             obs, reward, done, _ = env.step(actions)
 
             # saving reward and is_terminals
-            for i in range(n_agents):
+            for i in range(args.n_agents):
                 ppo_agents[i].buffer.rewards.append(reward)
                 ppo_agents[i].buffer.is_terminals.append(done)
 
@@ -234,12 +116,12 @@ def train():
 
             # update PPO agent
             if time_step % update_timestep == 0:
-                for i in range(n_agents):
+                for i in range(args.n_agents):
                     ppo_agents[i].update()
 
             # if continuous action space; then decay action std of ouput action distribution
-            if has_continuous_action_space and time_step % action_std_decay_freq == 0:
-                ppo_agent.decay_action_std(action_std_decay_rate, min_action_std)
+            if args.has_continuous_action_space and time_step % action_std_decay_freq == 0:
+                ppo_agent.decay_action_std(args.action_std_decay_rate, args.min_action_std)
 
             # log in logging file
             if time_step % log_freq == 0:
@@ -266,9 +148,9 @@ def train():
                 print_running_episodes = 0
 
             # save model weights
-            if time_step % save_model_freq == 0:
+            if time_step % args.save_model_freq == 0:
                 print("--------------------------------------------------------------------------------------------")
-                for i in range(n_agents):
+                for i in range(args.n_agents):
                     print("saving model at : " + checkpoint_paths[i])
                     ppo_agents[i].save(checkpoint_paths[i])
 
@@ -278,7 +160,7 @@ def train():
             if done:
                 break
 
-        if print_avg_reward >= stop_training_thres:
+        if print_avg_reward >= args.stop_training_thres:
             break
 
         print_running_reward += current_ep_reward
@@ -299,5 +181,65 @@ def train():
     print("Total training time  : ", end_time - start_time)
     print("============================================================================================")
 
+
 if __name__ == "__main__":
-    train()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--env", type=str, default="multigrid-rat-50-v0", choices=["multigrid-rat-0-v0","multigrid-rat-10-v0", "multigrid-rat-50-v0", "multigrid-rat-100-v0"], help="Environment used to evaluate the agent policy")
+    parser.add_argument("--n_episodes", type=int, default=10, help="Number of evaluation episodes")
+    parser.add_argument("--n_agents", type=int, default=1, help="Number of agents")
+    parser.add_argument("--obs_size", type=int, default=3, help="Agent view width and height")
+    parser.add_argument("--obs_dim", type=int, default=6, help="Agent view depth")
+    parser.add_argument("--K_epochs", type=int, default=80, help="Number of epochs between PPO update")
+    parser.add_argument("--max_training_timesteps", type=int, default=int(3e6), help="Max number of training time steps")
+    parser.add_argument("--eps_clip", type=float, default=0.2, help="Clipping for PPO update")
+    parser.add_argument("--gamma", type=float, default=0.99, help="Discounting rate")
+    parser.add_argument("--lr_actor", type=float, default=0.0003, help="Actor learning rate")
+    parser.add_argument("--lr_critic", type=float, default=0.001, help="Critic learning rate")
+    parser.add_argument("--has_continuous_action_space", type=bool, default=False, help="Continuous vs discrete action space")
+    parser.add_argument("--action_std_decay_rate", type=float, default=0.05, help="Linearly decay action_std, action_std = action_std - action_std_decay_rate")
+    parser.add_argument("--min_action_std", type=float, default=0.1, help="Minimum action_std, stop decay after action_std <= min_action_std")
+    parser.add_argument("--action_std_decay_freq", type=int, default=int(2.5e5), help="Action_std decay frequency in number of time steps")
+    parser.add_argument("--stop_training_thres", type=float, default=0.99, help="Stop training when average reward >= stop_training_thres")
+    parser.add_argument("--max_ep_len", type=int, default=1000, help="Max number of time steps for an episode")
+    parser.add_argument("--action_std", type=float, default=0.6, help="Starting std. dev. for action distribution (Multivariate Normal)")
+    parser.add_argument("--random_seed", type=int, default=1, help="Random seed")
+    parser.add_argument("--run_num_pretrained", type=int, default=0, help="Load a policy from a particular run number")
+    parser.add_argument("--save_model_freq", type=int, default=10000, help="Number of time steps between model saves")
+
+    args = parser.parse_args()
+
+    if args.env == "multigrid-rat-0-v0":
+        register(
+            id="multigrid-rat-0-v0",
+            entry_point="gym_multigrid.envs:CollectGameRat_0",
+        )
+
+    elif args.env == "multigrid-rat-10-v0":
+        register(
+            id="multigrid-rat-10-v0",
+            entry_point="gym_multigrid.envs:CollectGameRat_10",
+        )
+
+    elif args.env == "multigrid-rat-50-v0":
+        register(
+            id="multigrid-rat-50-v0",
+            entry_point="gym_multigrid.envs:CollectGameRat_50",
+        )
+
+    elif args.env == "multigrid-rat-100-v0":
+        register(
+            id="multigrid-rat-100-v0",
+            entry_point="gym_multigrid.envs:CollectGameRat_100",
+        )
+
+    else:
+        raise NotImplementedError
+    env = gym.make(args.env)
+
+    print("setting random seed to ", args.random_seed)
+    torch.manual_seed(args.random_seed)
+    env.seed(args.random_seed)
+    np.random.seed(args.random_seed)
+    random.seed(args.random_seed)
+
+    train(args, env)
