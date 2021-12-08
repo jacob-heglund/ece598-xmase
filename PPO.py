@@ -1,3 +1,4 @@
+from numpy.core.fromnumeric import trace
 import torch
 import torch.nn as nn
 from torch.distributions import MultivariateNormal
@@ -41,6 +42,7 @@ class ActorCritic(nn.Module):
     def __init__(self, obs_dim, obs_size, action_dim, has_continuous_action_space, action_std_init):
         super(ActorCritic, self).__init__()
         self.obs_dim = obs_dim
+        self.shap_mode = True
         self.has_continuous_action_space = has_continuous_action_space
 
         if has_continuous_action_space:
@@ -129,13 +131,14 @@ class ActorCritic(nn.Module):
 
 
     def act(self, state):
-
+        if len(state.shape) == 3:
+            state = torch.unsqueeze(state, 0)
         if self.has_continuous_action_space:
             action_mean = self.actor(state)
             cov_mat = torch.diag(self.action_var).unsqueeze(dim=0)
             dist = MultivariateNormal(action_mean, cov_mat)
         else:
-            action_probs = self.actor(torch.unsqueeze(state, 0).permute(0, 3, 1, 2))
+            action_probs = self.actor(state.permute(0, 3, 1, 2))
             dist = Categorical(action_probs)
 
         action = dist.sample()
@@ -145,6 +148,8 @@ class ActorCritic(nn.Module):
 
 
     def evaluate(self, state, action):
+        if len(state.shape) == 3:
+            state = torch.unsqueeze(state, 0)
 
         if self.has_continuous_action_space:
             action_mean = self.actor(state)
@@ -156,7 +161,6 @@ class ActorCritic(nn.Module):
             # For Single Action Environments.
             if self.action_dim == 1:
                 action = action.reshape(-1, self.action_dim)
-
         else:
             action_probs = self.actor(state.permute(0, 3, 1, 2))
             dist = Categorical(action_probs)
@@ -225,7 +229,7 @@ class PPO:
         print("--------------------------------------------------------------------------------------------")
 
 
-    def select_action(self, state):
+    def select_action(self, state, return_action_prob_shap=False, debug=False):
 
         if self.has_continuous_action_space:
             with torch.no_grad():
@@ -239,6 +243,7 @@ class PPO:
             return action.detach().cpu().numpy().flatten()
 
         else:
+            #TODO trying to debug the explainer issues. Apparently the outputs are the wrong size but SHAP doesn't tell you how you have to structure your model outputs so they work, so we're debugging here now
             with torch.no_grad():
                 state = torch.FloatTensor(state).to(device)
                 action, action_logprob, action_probs = self.policy_old.act(state)
@@ -246,7 +251,10 @@ class PPO:
             self.buffer.states.append(state)
             self.buffer.actions.append(action)
             self.buffer.logprobs.append(action_logprob)
-            return action.item(), action_probs
+            if return_action_prob_shap:
+                return action_probs.cpu()
+            else:
+                return action.item()
 
 
     def update(self):

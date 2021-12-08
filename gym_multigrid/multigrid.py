@@ -1,3 +1,4 @@
+from inspect import trace
 import math
 import gym
 from enum import IntEnum
@@ -26,7 +27,7 @@ COLORS = {
 COLOR_NAMES = sorted(list(COLORS.keys()))
 
 class World:
-
+    #TODO basically want this to be 1 so the features of the world are completely interpretable
     encode_dim = 6
 
     normalize_obs = 1
@@ -1036,7 +1037,9 @@ class MultiGridEnv(gym.Env):
         else:
             obs = [self.grid.encode_for_agents(self.agents[i].pos) for i in range(len(self.agents))]
         obs=[self.objects.normalize_obs*ob for ob in obs]
-        return obs
+        obs = obs[0]
+        obs = obs[:, :, 0:3].astype(float)
+        return [obs]
 
     def seed(self, seed=1337):
         # Seed the random number generator
@@ -1377,7 +1380,6 @@ class MultiGridEnv(gym.Env):
 
             # Done action (not used by default)
             elif actions[i] == self.actions.done:
-                pdb.set_trace()
                 pass
 
             else:
@@ -1392,8 +1394,9 @@ class MultiGridEnv(gym.Env):
             obs = [self.grid.encode_for_agents(self.agents[i].pos) for i in range(len(actions))]
 
         obs=[self.objects.normalize_obs*ob for ob in obs]
-
-        return obs, rewards, done, {}
+        obs = obs[0]
+        obs = obs[:, :, 0:3].astype(float)
+        return [obs], rewards, done, {}
 
     def gen_obs_grid(self):
         """
@@ -1435,7 +1438,6 @@ class MultiGridEnv(gym.Env):
 
         # Encode the partially observable view into a numpy array
         obs = [grid.encode_for_agents(self.objects, [grid.width // 2, grid.height - 1], vis_mask) for grid, vis_mask in zip(grids, vis_masks)]
-
         return obs
 
     def get_obs_render(self, obs, tile_size=TILE_PIXELS // 2):
@@ -1469,7 +1471,6 @@ class MultiGridEnv(gym.Env):
             self.window.show(block=False)
 
         if highlight:
-
             # Compute which cells are visible to the agent
             _, vis_masks = self.gen_obs_grid()
 

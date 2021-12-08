@@ -6,6 +6,7 @@ import time
 from datetime import datetime
 import argparse
 from gym.envs.registration import register
+from numpy.core.fromnumeric import trace
 
 import torch
 import numpy as np
@@ -98,11 +99,11 @@ def train(args, env):
         obs = env.reset()
         current_ep_reward = 0
 
-        for t in range(1, args.max_ep_len+1):
+        for t in range(1, args.max_ep_len + 1):
             # select action with policy
             actions = []
             for i in range(args.n_agents):
-                action, _ = ppo_agents[i].select_action(obs[i])
+                action = ppo_agents[i].select_action(obs[i])
                 actions.append(action)
             obs, reward, done, _ = env.step(actions)
 
@@ -188,7 +189,7 @@ if __name__ == "__main__":
     parser.add_argument("--n_episodes", type=int, default=10, help="Number of evaluation episodes")
     parser.add_argument("--n_agents", type=int, default=1, help="Number of agents")
     parser.add_argument("--obs_size", type=int, default=3, help="Agent view width and height")
-    parser.add_argument("--obs_dim", type=int, default=6, help="Agent view depth")
+    parser.add_argument("--obs_dim", type=int, default=3, help="Agent view depth")
     parser.add_argument("--K_epochs", type=int, default=80, help="Number of epochs between PPO update")
     parser.add_argument("--max_training_timesteps", type=int, default=int(3e6), help="Max number of training time steps")
     parser.add_argument("--eps_clip", type=float, default=0.2, help="Clipping for PPO update")

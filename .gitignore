@@ -4,6 +4,8 @@ storage/
 PPO_gif_images/
 PPO_gifs
 PPO_agent
+PPO_eval
+*.png
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
