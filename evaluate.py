@@ -115,6 +115,9 @@ def feature_importance_SHAP(args, env):
 
     for ep_idx in range(1, args.n_episodes_background + 1):
         obs = env.reset()
+        img = env.render()
+        pdb.set_trace()
+
         obs_buffer.append(np.expand_dims(obs[0], 0))
         ep_reward = 0
 

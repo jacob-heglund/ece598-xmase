@@ -12,6 +12,7 @@ import torch
 import numpy as np
 import gym
 import random
+import matplotlib.pyplot as plt
 
 from PPO import PPO
 import pdb
@@ -121,7 +122,7 @@ def train(args, env):
                     ppo_agents[i].update()
 
             # if continuous action space; then decay action std of ouput action distribution
-            if args.has_continuous_action_space and time_step % action_std_decay_freq == 0:
+            if args.has_continuous_action_space and time_step % args.action_std_decay_freq == 0:
                 ppo_agent.decay_action_std(args.action_std_decay_rate, args.min_action_std)
 
             # log in logging file
