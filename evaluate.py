@@ -105,6 +105,7 @@ def feature_importance_SHAP(args, env):
         ppo_agents[i].load(checkpoint_path)
 
     print("--------------------------------------------------------------------------------------------")
+    #TODO so this isn't actually used with the "partition" explainer method, it would only be needed if we did CIU (I think, double check that actually) or the "Sampling" explainer
 
     # create a "background" dataset of agent observations
     test_running_reward = 0
@@ -115,8 +116,8 @@ def feature_importance_SHAP(args, env):
 
     for ep_idx in range(1, args.n_episodes_background + 1):
         obs = env.reset()
-        img = env.render()
-        pdb.set_trace()
+        # img = env.render()
+        # pdb.set_trace()
 
         obs_buffer.append(np.expand_dims(obs[0], 0))
         ep_reward = 0
@@ -192,7 +193,8 @@ def feature_importance_SHAP(args, env):
                 print(f"test episode reward: {reward}")
 
                 # feature importance analysis for frames in this episode
-                input_images = np.concatenate(obs_buffer[:-1], axis=0)
+                # pdb.set_trace()
+                input_images = np.concatenate(obs_buffer[3:-1], axis=0)
                 shap_values = explainer(input_images, max_evals = 5000, batch_size = 50, outputs=outputs)
 
                 # try to replace items in pixel_values with an RGB-encoded version of them
@@ -201,7 +203,8 @@ def feature_importance_SHAP(args, env):
                 # pdb.set_trace()
 
                 shap.image_plot(shap_values)
-                plt.savefig(f"shap_{test_env}.png")
+                save_dir = make_save_dir(args, env=test_env)
+                plt.savefig(f"{save_dir}/policy_{args.policy_env}.png")
 
                 break
 
@@ -223,13 +226,22 @@ def evaluate_agent(args, env):
     pass
 
 
-def save_gif(args, img_buffer):
+def make_save_dir(args, env=None):
     # output path
-    if not os.path.exists(args.gif_dir):
-        os.makedirs(args.gif_dir)
-    save_dir = f"{args.gif_dir}/env_{args.env}"
+    if env is not None:
+        curr_env = env
+    else:
+        curr_env = args.env
+
+    if not os.path.exists(args.output_dir):
+        os.makedirs(args.output_dir)
+    save_dir = f"{args.output_dir}/env_{curr_env}"
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
+    return save_dir
+
+def save_gif(args, img_buffer):
+    save_dir = make_save_dir(args)
     gif_path = f"{save_dir}/policy_{args.policy_env}.gif"
     imageio.mimsave(gif_path, img_buffer, duration=args.gif_frame_duration)
 
@@ -240,7 +252,7 @@ def save_gif(args, img_buffer):
 
 
 def render_image(img_buffer, args, env, ep, t, done, ep_reward=None, save=True):
-    img = env.render(mode="rgb_array", tile_size=75, highlight=True)
+    img = env.render(mode="rgb_array", tile_size=75, highlight=False)
     img = Image.fromarray(img).transpose(Image.ROTATE_90)
     I1 = ImageDraw.Draw(img)
     font = ImageFont.truetype("Montserrat-Black.otf", 25)
@@ -283,7 +295,7 @@ if __name__ == '__main__':
     parser.add_argument("--action_std", type=float, default=0.6, help="Starting std. dev. for action distribution (Multivariate Normal)")
     parser.add_argument("--random_seed", type=int, default=1, help="Random seed")
     parser.add_argument("--run_num_pretrained", type=int, default=0, help="Load a policy from a particular run number")
-    parser.add_argument("--gif_dir", type=str, default="PPO_agent", help="Save directory for output gifs")
+    parser.add_argument("--output_dir", type=str, default="output", help="Save directory for gifs and images")
     parser.add_argument("--gif_frame_duration", type=float, default=0.5, help="Number of seconds per gif frame")
     parser.add_argument("--gif_n_end_frames", type=int, default=5, help="Number of still frames at the end of each episode's gif")
     parser.add_argument("--mode", type=str, default="visualize_agent", choices=["visualize_agent", "shap", "ciu"], help="if visualize_agent, Visualize agent performance with gifs of agent interacting with environment, else if shap or ciu, run those feature importance algorithms and create gifs of the importance")
